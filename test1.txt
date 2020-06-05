@@ -1,0 +1,46 @@
+# the test sample with dead cycle
+#  You can  make some changes to test correctness and robustness.
+# The corresponding machine code of this document is in 01code1.txt
+# initial PC=0x0000000
+.text
+	j _start	#  jump to code segment
+
+.data
+    .word 6,0,8,0x80000000,0x80000100,0x100   #data segment1
+.word	5,0b11,-16,-0b1	#data segment2
+.text
+_start:    addi $t0,$0,3       	#t0=3  	
+        addi $t1,$0,5   		#t1=5	
+		addi   $t2,$0,1       	#t2=1	
+		addi  $t3,$0,    0			#t3=0	
+   add  $s0,$t1,$t0  		#s0=t1+t0=8 	test add 
+        lw   $s1, 12(  $0 )  		#							
+        beq  $s1,$s0,_next1		#_next1 	test beq and lw	branch to _next1 correctly		
+		
+		j _fail					
+
+_next1:	
+		lw $t0, 16   ($0)			#t0 = 0x80000000	
+		lw $t1, 20($0)			#t1 = 0x80000100	
+		
+		add  $s0,$t1,$t0		#s0 = 0x00000100 = 256	
+		lw $s1, 24($0)			#						
+        beq  $s1,$s0,_next2		#next2		branch to _next1 correctly
+		
+		j _fail
+
+_next2:
+		add $0, $0, $t2	#$0 should always be 0			
+		beq $0,$t3,_success		#branch to _next2 correctly					
+		
+		
+_fail:  
+		sw   $t3,8($0) #0  if you jump here, it fails.
+        j    _fail
+
+_success: 
+		sw   $t2,8($0)    #all tests pass	! 0x08 should be 1
+		j   _success       
+				#The condition for passing the test is that the value in the last memory address 0x08 is 1, indicating that all the tests have passed
+
+					  
